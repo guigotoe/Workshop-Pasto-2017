@@ -1,0 +1,8 @@
+Package: workshopPasto2017_data
+Title: Data package Workshop Pasto 2017 - from Data package for PH525x Data Analysis for Genomics
+Version: 1.1
+Date: 2017-12-13
+Author: Guillermo Torres
+Maintainer: Guillermo Torres <guigotoe@gmail.com>
+Description: Data Analysis for Genomics datasets
+License: GPL-3
