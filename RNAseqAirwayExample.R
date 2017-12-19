@@ -197,3 +197,72 @@ summary(res)
 # so that the mean filtering is optimal for our new FDR threshold.
 res2 <- results(dds, alpha=0.05)
 table(res2$padj < 0.05)
+
+##############################
+###* Visualizing results *###
+############################
+# Los MA-plot proporcionan una vista global de los genes diferenciales, 
+# en el eje "y" el log2 fold change y sobr el eje "x" la media de los conteos normalizados
+mypar()
+plotMA(res, ylim=c(-4,4))
+plotMA(res2, ylim=c(-4,4))
+
+# Podemos visualizar aquellos que tienen un fold change mas o menos de el doble de la expresión
+# que los controles
+res.thr <- results(dds, lfcThreshold=1)
+plotMA(res.thr, ylim=c(-4,4))
+
+# Histograma del p-value
+hist(res$pvalue[res$baseMean > 1], 
+     col="grey", border="white", xlab="", ylab="", main="")
+
+# Una tabla de resultados ordenada de acuerdo al pvalue
+resSort <- res[order(res$padj),]
+head(resSort)
+
+# Examinar los conteos para el genes con mejor adj.p-value
+plotCounts(dds, gene=which.min(res$padj), intgroup="dex")
+
+# plot de conteos para el gen con mejor adj.p-value  con ggplot:
+library(ggplot2)
+data <- plotCounts(dds, gene=which.min(res$padj), intgroup=c("dex","cell"), returnData=TRUE)
+ggplot(data, aes(x=dex, y=count, col=cell)) +
+  geom_point(position=position_jitter(width=.1,height=0)) +
+  scale_y_log10()
+
+ggplot(data, aes(x=dex, y=count, col=cell, group=cell)) +
+  geom_point() + geom_line() + scale_y_log10() 
+
+library(pheatmap)
+topgenes <- head(rownames(resSort),20)
+mat <- assay(rld)[topgenes,]
+mat <- mat - rowMeans(mat)
+df <- as.data.frame(colData(dds)[,c("dex","cell")])
+pheatmap(mat, annotation_col=df)
+
+
+library(sva)
+dat <- counts(dds, normalized=TRUE)
+idx <- rowMeans(dat) > 1
+dat <- dat[idx,]
+mod <- model.matrix(~ dex, colData(dds))
+mod0 <- model.matrix(~ 1, colData(dds))
+svseq <- svaseq(dat, mod, mod0, n.sv=2)
+
+#Do the surrogate variables capture the cell difference?
+
+plot(svseq$sv[,1], svseq$sv[,2], col=dds$cell, pch=16)
+
+dds.sva <- dds
+dds.sva$SV1 <- svseq$sv[,1]
+dds.sva$SV2 <- svseq$sv[,2]
+design(dds.sva) <- ~ SV1 + SV2 + dex
+dds.sva <- DESeq(dds.sva)
+res.sva <- results(dds.sva)
+
+hist(res$pvalue[res$baseMean > 1], 
+     col="grey", border="white", xlab="", ylab="", main="")
+
+hist(res.sva$pvalue[res.sva$baseMean > 1], 
+     col="grey", border="white", xlab="", ylab="", main="")
+
