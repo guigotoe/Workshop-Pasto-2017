@@ -1,7 +1,6 @@
 ---
-title: "Introduction"
+title: "Introduction al modelamiento ecológico"
 author: "Guillermo Torres"
-date: "8/30/2019"
 output: pdf_document
 ---
 
@@ -9,17 +8,104 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-## Brief Introduction to `dplyr`
+# Sobre este curso y sus datos
 
-The learning curve for R syntax is slow. One of the more difficult aspects that requires some getting used to is subsetting data tables. The `dplyr` package brings these tasks closer to English and we are therefore going to introduce two simple functions: one is used to subset and the other to select columns.
+Los datos que se van a utilizar son de la tesis doctoral de Verneaux (Verneaux et al. 2003). Él propuso que se podian usar algunas especies de peces para caracterizar zonas ecologicas a lo largo de rios y arroyos en Europa. Verneaux demostró que las comunidades de pescados eran buenos indicadores biológicos para estos cuerpos de agua. 
 
-Take a look at the dataset we read in:
+Los datos que se van a utilizar consisten en 3 matrices que contienen parte de los datos usados por Verneaux. Estos datos han sido colectados de 30 sitios a lo largo del rio *Doubs*, el cual corre entre Francia y Suiza en las montañas Jura. La primera matriz de datos contiene las abundancias de 27 especies de pescados, la segunda matriz contiene 11 variables ambientales relacionadas con la hidrología, geomoforlogía y quimica del rio. La tercera matriz contiene las coordenadas geográficas (Cartesianas, X y Y) de los sitios. 
 
-```{r cars}
-summary(cars)
+# Análisis exploratorio de los datos
+
+Los análisis exploratorios son métodos que usan herramientas de visualización y calcula descriptores sintéticos que son requeridos para ganar información referente a:
+
+  * Tener una visión global de los datos
+  * Transformar o recodificar algunas variables
+  * Orientar analisis futuros
+
+## Exploracion de los datos *Doubs* 
+
+Al comienzo de cada sesión de trabajo se recomienda definir el directorio o carpeta de trabajo. Si se usa Rstudio, el directorio de trabajo se puede definir yendo a:
+
+  * Sesión
+    * Definir directorio de trabajo
+      * Escojer directorio 
+
+En la consola de se puede definir de la siguente manera:
+
+```{r SetDir, eval=FALSE, include=TRUE}
+setwd('/direccion/de/la/carpeta/de/trabajo/')
 ```
+```{r SD, include=FALSE}
+setwd('~/Documents/Proyectos/Workshops/workshops_git/NumEco2019/1a_intro/')
+```
+
+Una vez definido el directorio de trabajo vamos a cargar los datos.
+```{r loadData, echo=TRUE}
+# Importar los datos desde archivos de texto, ej. formato CSV 
+# ************************************************************
+# Matriz de las especies de pescados (data frame de las abundancias de los pescados):
+spe <- read.csv('../data/DoubsSpe.csv',row.names=1)
+# Matriz de los datos ambientales:
+env <- read.csv('../data/DoubsEnv.csv',row.names=1)
+# Matriz de la informacion espacial (Coordenadas geograficas X,Y):
+spa <- read.csv('../data/DoubsSpa.csv',row.names=1)
+```
+
+Echemos un vistazo a los datos de la comunidad (objeto **spe**, abundancia de los pescados)
+```{r speExplore1, eval=FALSE, include=TRUE}
+# funciones básicas
+# *****************
+# Muestra el data frame completo (No recomendado para set de datos grandes):
+spe
+# Muestra solamente las primeras 5 lineas:
+head(spe)
+```
+```{r speExplore, echo=TRUE}
+# Muestra la dimensión del datafrmae (No. filas ,No. columnas):
+dim(spe)
+# Muestra el No. de filas:
+nrow(spe)
+# Muestra el No. columnas:
+ncol(spe)
+# Muestra solamente 5 filas y 10 columnas:
+spe[1:5,1:10]
+# Nombre de las columnas  (descriptors = especies):
+colnames(spe)
+# Nombre de las filas
+rownames(spe)
+```
+
+```{r speSummary, eval=FALSE, include=TRUE}
+# Estadisticos descriptivos para las columnas
+summary(spe)
+```
+
+
+```{r speExplore2, echo=FALSE}
+summary(spe[,1:4])
+```
+### **Usando la mediana y la media de las abundancias. Las distribuciones son simétricas?**
+```{r speExplore3, echo=TRUE}
+# Distribución general de las abunancias
+# **************************************
+# Mínimo y máximo valor de las abundancias de todo el set de datos:
+range(spe)
+# Número de especies ausentes 
+sum(spe==0)
+# Proporción de ceros en el set de datos
+sum(spe==0)/(nrow(spe)*ncol(spe))
+# Conteo de especies con 0,1,2,3 o n de abundancia (clases) 
+ab <- table(unlist(spe))
+# Diagrama de barras de la distribución de abundancia de las especies
+barplot(ab,las=1,xlab="Clases de abundancia",ylab="Frecuencia",co=gray(5:0/5))
+```
+
+**Fig. 1** Diagrama de barras de las clases de abundancia
+
+### **Mirando el diagrama de barras sobre las clases de abundancia, cómo se interpretaría la alta frecuencia de ceros (ausencias) en el set de datos?**
+
+
 
 ## Including Plots
 
