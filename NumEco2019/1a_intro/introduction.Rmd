@@ -1,6 +1,7 @@
 ---
 title: "Introduction al modelamiento ecológico"
 author: "Guillermo G. Torres PhD"
+
 output: pdf_document
 ---
 
@@ -192,7 +193,9 @@ plot(sit.pres,type="s",main="Riqueza de especies vs. \n flujo del rio",las=1,
      xlab="Posicion de los sitios a lo largo del rio",ylab="Riqueza en especies",col="grey")
 text(sit.pres,row.names(spe),cex=0.8,col="red")
 # 3. Usamos las coordenadas geográficas para graficar un mapa de burbujas usando la riqueza 
-plot(spa,main="Mapa de riqueza de especies",pch=21,col="black",bg="brown",cex=4*sit.pres/max(sit.pres),xlab="Coordenada X (km)",ylab="Coordenanda Y (km)")
+plot(spa,main="Mapa de riqueza de especies",pch=21,col="black",bg="brown",
+     cex=4*sit.pres/max(sit.pres),
+     xlab="Coordenada X (km)",ylab="Coordenanda Y (km)")
 lines(spa,col="light blue")
 ```
 
@@ -426,19 +429,20 @@ plot(env$das,env$nit,type="l",xlab="Distancia desde la fuente (km)",ylab="Nitrat
 Tambien podemos explorar las relaciones pareadas entre las variables medioambientales. Para esto la función de R **pairs()** en un contexto gráfico es muy poderosa. Esta función dibuja una matríz de "scatter plots" en los que se grafícan comparaciones pareadas entre variables (**Fig. 12**). Adicionalmente podemos adicionar una linea de tendencia (LOWESS) y un histograma de cada variable en la diagonal de la matríz, la cual muestre la distribución de frecuencia de los valores que toma cada una de las variables. Para generar este grafico usaremos un script de Francois Gillet.
 
 ```{r echo=TRUE, fig.height=9, fig.align="center"}
-# scatter plot de todas las comparaciones pareadas de las variables ambientales
+# Scatter plot de todas las comparaciones pareadas de las variables ambientales
 # *****************************************************************************
 # Cargar funciones adicionales a partir del script de Francois Gillet
 source("./panelutils.R")
 par(mfrow=c(1,1),pty="m")
-pairs(env,panel=panel.smooth,diag.panel=panel.hist,main="Plots pareados con histogramas y lineas de tendencia")
+pairs(env,panel=panel.smooth,diag.panel=panel.hist,
+      main="Plots pareados con histogramas y lineas de tendencia")
 ```
 
 **Fig. 12** Scatter plots entre los pares de las variables medioambientales con lineas de tendencia (LOWESS) e histogramas
 
 Podemos usar transformaciones simples, tales transformación logaritmica para mejorar la distribución de algunas variables y acercarlas más a una distribución Normal. Adicionalmente, dado que estas variables son de dimensiones heterogeneas, es decir que se expresan en diferentes unidades y escalas, los analisis estadisticos futuros requeriran que ellas sean estandarizadas a una media 0 y varianza 1 (Normalidad). Estas variables centradas y escaladas se llamaran "z-scores". Miremos como se pueden llevar a cabo dichas transformaciones y estandarizaciones con un ejemplo (**Fig.13**). 
 
-```{r echo=TRUE}
+```{r echo=TRUE, fig.align="center"}
 # Transformaciones simples a las variables medioambientales
 # *********************************************************
 # Transformacion Log. de la variable "pendiente" (y=ln(x))
@@ -459,5 +463,192 @@ head(apply(env.z,2,mean),n=5)
 apply(env.z,2,sd)
 ```
 
-##**Cómo son las distribuciones de los datos estandarizados vs. los datos crudos?**
+Responder: **Cómo son las distribuciones de los datos estandarizados vs. los datos crudos?**
+
+#**Associaciones y sus medidas**
+
+Uno de los propositos del estudio ecologico es comparar ciertas caracteristicas, ya sean entre especies o entre sitos. Para generalizar vamos a definir 2 tipos de comparaciones: *modo Q* o *R*. Cuando un par de objetos (~sitos) es comparado, se dice que el análisis es de *modo Q*. Sin embargo, cuando las comparaciones son echas sobre un par de descriptores (~especies) entonces se dice que es un análisis *modo R*. Esta distinsión es importante hacerla ya que las medidas de asociacion para *modo Q* y *R* no son las mismas.
+
+En *modo Q*, las medidas de asociaciones entre un par de objetos son basadas en **distancias de disimilaridad (o similaridad)** (ej. distancias Euclidianas, Jaccard, Bray-Curtis, mahalanobis, etc.). En *modo R*, se usan medidas de **dependencia** entre variables, tales como covarianza o coeficiente de correlación (ej. Pearson, etc.). 
+
+#**Modo Q: Calculo de matrices de distancia entre objetos (~sitios)**
+
+Para este modulo vamos a utilizar cuatro paquetes de R: **stats** (esta incluido cuando se instala R), **vegan**, **ade4**, **cluster** y **FD**.
+
+**Nota informativa:**
+
+En R todas las medidas de similaridad son convertidas a distancias para computar una matríz quadrada de clase "dist", en la que la diagonal (distancia entre un objeto y el mismo) es 0. De esta manera la diagonal puede ser ignorada. La conversion entre matrices de similaridad y disimilaridad varia de acuerdo al paquete usado:
+
+- En **stats**, **FD** y **vegan** la conversion de similaridad *S* a disimilaridades *D* es: *D* = 1 - *S* 
+- En **ade4**, *D* = $\sqrt{1 - S}$
+
+Para seguir explorando nuestros datos, vamos a calcular las disimilaridades entre nuestros sitios usando tres diferentes medidas :
+
+1. Disimilaridad de *Bray-Curtis* (conocida tambien como la reciproca del indice de similaridad de Steinhaus). Vamos a calcular esta matríz para los datos crudos y los datos de abundancia log-transformados. 
+
+2. La distancia "*chord*" es una distancia Euclidiana calculada a partir de los vectores de los sitios normalizados a longitud 1. Esta normalización es llamada "*chord*" y se hará utilizando la función **decostand()** del paquete **vegan** con el argumento *normalize*.
+
+3. La distancia Hellinger, la cual es una distancia Euclidiana sobre los vectores de los sitios, donde los valores de abundancia son primero divididos por el total de la abundancia del sitio y al resultado se le saca la raíz cuadrada. A éste proceso se le llama transformación de Hellinger y se obtendrá usando la función **decostand()** con el argumento "hellinger".
+
+Para graficar las matrices vamos a usar el paquete de R gclus y el script "*codiss.R*" escrito por Francois Gillet, necesario para darle color de los heatmaps.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Cargando los paquetes
+library(ade4)
+library(vegan)
+library(gclus)
+library(cluster)
+library(FD)
+source("./coldiss.R")
+# Excluir el sitio de muestreo 8 el cual esta vacio (no peces)
+spe <- spe[-8,];env <- env[-8,];spa <- spa[-8,]
+
+# Calcular distancias y matrices de disimilaridad
+# ************************************************
+# Bray-Curtis sobre datos crudos
+spe.db <- vegdist(spe,"bray")
+# Bray-Curtis sobre datos log-transformados
+spe.dbln <- vegdist(log1p(spe),"bray")
+# Distancia Chord 
+spe.norm <- decostand(spe,"norm")
+spe.dc <- dist(spe.norm)
+# Distancia Hellinger]
+spe.hel <- decostand(spe,"hel")
+spe.dh <- dist(spe.hel)
+```
+
+El color de los plots representa que tan similares o disimiles son los sitios comparados, asi que:
+**Magenta** = similaridad måxima (disimilridad cerca a 0)
+**Cyan** = similaridad mínima (disimilaridad cerca a 1)
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Graphicar las matrices de distancia
+# ***********************************
+coldiss(spe.db,byrank=FALSE,diag=TRUE)
+```
+
+**Fig. 14** Heatmaps de la matríz de disimilaridad de Bray-Curtis calculada con base en los datos crudos\
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+coldiss(spe.dh,byrank=FALSE,diag=TRUE)
+```
+
+**Fig. 15** Heatmaps de la matríz de distancia **Hellinger** calculada con base en los datos hellinger-transformados
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Matríz de disimilaridad de Jaccard (datos binarios)
+spe.dj <- vegdist(spe,"jac",binary=TRUE)
+coldiss(spe.dj,byrank=FALSE,diag=TRUE)
+```
+
+**Fig. 16** Heatmaps de la matríz de distancia de **Jacard** calculada con base en los datos hellinger-transformados
+
+### Hacer los otros heatmaps para Braz-Curtis con datos log-transformados, y demas transformaciones. Ahora comparar las distancias o matrices de disimilaridad, incluyendo la de matriz con datos transformados en binarios y discutir que tan similares son
+
+## *Modo Q* para analizar los datos cuantitativos medioambientales
+
+Dado que los datos medioambientales tienen una escala diferente, es decir fueron medidos de manera diferente y por tanto unidades diferentes; los datos deberan estandarizarse a (*z*-scores). Dicha estandarización ayudará a disminuir los sezgos al calcular la distancia Euclidiana. Por lo tanto, para comparar los sitios con base en los datos medioambientales vamos a calcular la matríz de distancias Euclidiana sobre los datos medioambiantales estandarizados (*z*-scores). Adicionalmente vamos a remover la variable "das" (distancia desde la fuente), ya que es una medida de posición espacial y no un descriptor o variable medioambiental.
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Remover variable "das" del objeto env
+env2 <- env[,-1]
+# Matríz de disimilaridad sobre datos (env2) estandarizados 
+env.de <- dist(decostand(env2,"standardize"))
+coldiss(env.de,byrank=FALSE,diag=TRUE)
+```
+
+# *Modo R* para calcuolar la dependencia de matrices entre variables
+
+Coeficientes de correlación son usados para comparar variables cuantitativas o semi-cuantitativas en el *Modo R*. Entre estos coeficientes se incluyen el de Pearson para datos paramétricos (con distribución Normal) o Spearman or Kendall como coeficientes de correlación para datos no paramétricos. Para datos cualitativos normalmente se usan estadísticos de contingencia tales como el Chi-cuadrado y sus formas derivados. Para datos binarios (presencia-ausencia) se usan coeficientes como el de Jaccard, Sørensen y Ochiai, los cuales sirven para comparar entre especies. 
+
+## *Modo R* usado para comparar la abundancia entre especies
+
+En el caso particular de abundancias, es normal usar covarianzas para comparar entre distribuciones de especies en función del espacio o tiempo, y a demas se pueden aplicar tanto para datos paramétricos como no paramétricos. Sin embargo, este tipo de datos de abundancia esta caracterizado por contener una gran cantidad de ceros. Al comparar distribuciones los ceros contribuyen a incrementar los indices de correlacion. Por lo tanto datos de abundancia de especies debe tratarse (transformarse) previo al análisis. Legendre y Gallagher (2001) propusieron 5 posibles transformaciones de los datos y cuatro de ellas se encuentran en la función **decostand()** del paquete **vegan** ("total", "normalize", "hellinger", "chi.square"). Todas estos métodos expresan los datos como abundancias relativas por sitio (perfiles de sitio) removiendo la abundancia total del sitio. En la transformación de Hellinger, a las abundancias relativas se les calcula la raíz cuadrada, lo cual reduce fuertemente la influencia de datos con alta abundancia. 
+
+```{r echo=TRUE, fig.height=9, fig.align="center", message=FALSE, warning=FALSE}
+# Transformar datos de abundancia usando Hellinger
+spe.hel <- decostand(spe,"hellinger")
+# Matríz de disimilaridad sobre datos (env2) estandarizados 
+spe.hpear <- round(cor(spe.hel),2)
+# Ordenar las variables de acuerdo para plotearlas
+spe.o <- order.single(spe.hpear)
+source("./panelutils.R")
+pairs(spe[,spe.o[1:11]],lower.panel=panel.smooth,upper.panel=panel.cor,
+      diag.panel=panel.hist,cex.cor=0.8,
+      main="Correlaciones de Pearson - especies")
+
+pairs(spe.hel[,spe.o[1:11]],lower.panel=panel.smooth,upper.panel=panel.cor,
+      diag.panel=panel.hist,cex.cor=0.8,
+      main="Correlaciones de Pearson - especies")
+
+```
+
+# Analisis de cluster
+
+La clusterizacion de los datos tiene por objetivo identificar grupos de objetos similares en un espacio de datos multivariado. Similaridades entre observaciones (o individuos) es definida usando algunas medidas de distancia entre observaciones tales como distancias Euclidianas o medidas de distancia basadas en correlación.
+
+Hay diferentes técnicas de clusterizacion de las cuales podemos destacar:
+
+  * *Clusterización por partición*, en esta aproximación se subdividen a priori los datos en *k* grupos. Uno de los métodos más usados es el *k-means*.
+  * *Clusterización herárquica*, esta aproximación identifica grupos sin subdividir los datos.
+  
+## Métodos para medir distancias
+
+La escogencia de la medida de distancia es miy importante dado que esta influye en el resultado de la clusterización. La distancia más usada es la distancia Euclideana. Sin embargo, depende del tipo de datos y de la pregunta de investigación alguna otra medida puede ser preferida. Por ejemplo, en análisis de expresión génica (Modo R) es normalmente usada una distancia basada en correlaciones (Pearson). 
+
+Distancias basadas en correlaciones consideran 2 objetos similaris si sus características son altamente correlacionadas, incluso si sus valores son tan diferentes que usando distancias Euclidianas sugieren ausencia de similaridad. Así, cuando la distancia entre 2 objetos es igual a 0, lo interpretamos como objetos perfectamente correlacionados. Cabe notar que la correlación de Pearson es sensible a datos extremos, no obstante, para mitigar dicho efecto es posible usar correlación de Spearman en su lugar. 
+
+Las medidas de distancai están intimamente relacionadas a la escala (unidades) de las variables medidas. Por lo tanto, es altamente recomendable escalar (estandarizar) las variables antes de calcular las distancias. La función **scale()** de R transforma los datos de la siguiente manera:
+
+$\ \dfrac{x_i - \mu}{\sigma}$
+
+## Clusterización por particiones
+
+*K-means* y *PAM* (partición alrededor de meioides) es una técnica de clusterización que requiere una subdivición los datas en un conjunto de *k* grupos, donde *k* es un numero especificado por el investigador. *K-means* es un método más suceptible a valores extremos en comparación a *PAM*. Sin embargo, es posible determinar cual podría ser el número optimo de cluster de la siguiente manera.
+
+
+```{r echo=TRUE, fig.height=3, fig.align="center", message=FALSE, warning=FALSE}
+library(factoextra)
+library(cluster)
+library(pheatmap)
+
+spe.hel <- decostand(spe,"normalize")
+# K means
+fviz_nbclust(spe.hel,kmeans,method="gap_stat")
+spe.km <- kmeans(spe.hel,4,nstart=25)
+fviz_cluster(spe.km,data=spe.hel,palette="jco")
+# PAM
+fviz_nbclust(spe.hel,pam,method="silhouette")
+spe.pam <- pam(spe.hel,k=2,metric="euclidean")
+fviz_cluster(spe.pam,data=spe.hel,palette="jco")
+```
+
+## Clusterización por "*Clustering jerárquico*""
+
+Ésta técnica de clusterización no requiere una subdivición los datas en un conjunto de *k* grupos. El resultado de esta técnica produce una representación de los datas basado en un "*árbol*" conocido como **dendograma**. Las observaciónes pueden subdividirse en grupos cortando el dendograma a un nivel de similaridad específico. 
+
+
+```{r echo=TRUE, fig.align="center", message=FALSE, warning=FALSE}
+library(factoextra)
+library(cluster)
+library(pheatmap)
+
+spe.hel <- decostand(spe,"normalize")
+spe.dis <- dist(spe.hel)
+spe.hc <- hclust(spe.dis,method="ward.D2")
+fviz_dend(spe.hc,cex=0.5,k=4,palette="jco")
+pheatmap(t(spe.hel),cutree_cols=4)
+
+# Relaciones entre clusters de peces y 4 variables medioambientales
+# *****************************************************************
+
+par(mfrow=c(2,2),mai=c(0.7,0.7,0.4,0.4))
+boxplot(sqrt(env$alt)~spe.km$cluster,main="Altitud",las=1,
+        ylab="sqrt(alt)",col=2:5,varwidth=TRUE)
+boxplot(log(env$pen)~spe.km$cluster,main="Pendiente",las=1,
+        ylab="log(pen)",col=2:5,varwidth=TRUE)
+boxplot(env$oxy~spe.km$cluster,main="Oxygeno",las=1,
+        ylab="oxy",col=2:5,varwidth=TRUE)
+boxplot(sqrt(env$amm)~spe.km$cluster,main="Amoniaco",las=1,
+        ylab="sqrt(amm)",col=2:5,varwidth=TRUE)
+```
 
