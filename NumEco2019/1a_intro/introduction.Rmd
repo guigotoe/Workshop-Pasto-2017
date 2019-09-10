@@ -9,6 +9,28 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# **Paths y directorios de trabajo**
+
+Cuando se trabaja en R es útili definir y/o conocer el directorio de trabajo working directory. Este es el directorio o folder en el cual R guardará y buscarán los archivos por defecto. Uno puede saber cual es el directorio de trabajo tipeando:
+
+```{r SetDir, eval=FALSE, include=TRUE}
+getwd()
+```
+
+Se puede cambiar el directrio de trabajo usando la función setwd, o cambiando a través de RStudio, dando click sobre la pestaña Session.
+
+Al comienzo de cada sesión de trabajo se recomienda definir el directorio o carpeta de trabajo. Si se usa Rstudio, el directorio de trabajo se puede definir yendo a:
+
+  * Sesión
+    * Definir directorio de trabajo
+      * Escojer directorio 
+
+En la consola de se puede definir de la siguente manera:
+
+```{r, eval=FALSE, include=TRUE}
+setwd('/direccion/de/la/carpeta/de/trabajo/')
+```
+
 
 # **Sobre este curso y sus datos**
 
@@ -25,18 +47,6 @@ Los análisis exploratorios son métodos que usan herramientas de visualización
   * Orientar analisis futuros
 
 ## Exploración de los datos *Doubs* 
-
-Al comienzo de cada sesión de trabajo se recomienda definir el directorio o carpeta de trabajo. Si se usa Rstudio, el directorio de trabajo se puede definir yendo a:
-
-  * Sesión
-    * Definir directorio de trabajo
-      * Escojer directorio 
-
-En la consola de se puede definir de la siguente manera:
-
-```{r SetDir, eval=FALSE, include=TRUE}
-setwd('/direccion/de/la/carpeta/de/trabajo/')
-```
 
 Una vez definido el directorio de trabajo vamos a cargar los datos.
 ```{r loadData, echo=TRUE}
