@@ -77,7 +77,6 @@ En la consola de se puede definir de la siguente manera:
 setwd('/direccion/de/la/carpeta/de/trabajo/')
 ```
 
-
 # **Sobre este curso y sus datos**
 
 Los datos que utilizarán en este curso fueron usados en la tesis doctoral de Verneaux (Verneaux et al. 2003). Él propuso que se podian usar algunas especies de peces para caracterizar zonas ecologicas a lo largo de rios y arroyos en Europa. Verneaux demostró que las comunidades de peces eran buenos indicadores biológicos para estos cuerpos de agua. En este curso vamos a tratar de llegar a la misma conclusión
@@ -707,4 +706,13 @@ boxplot(env$oxy~spe.km$cluster,main="Oxygeno",las=1,
 boxplot(sqrt(env$amm)~spe.km$cluster,main="Amoniaco",las=1,
         ylab="sqrt(amm)",col=2:5,varwidth=TRUE)
 ```
+
+# **Metodos Ordinales sin constricciones**
+
+Mientras el análisis de clusters busca por discontinuidades entre el set de datos, los métodos ordinales extraen las principales tendencias en la forma de ejes continuos. De esta manera estos métodos se adaptan muy bien al análisis de datos estructurados sobre gradientes.
+
+## ** Espacio multidimensional**
+
+Los datos multivariados pueden ser vistos como una colección de sitios posicionados en un espacio donde cada variable define una dimensión. Por lo tanto, uno puede imaginar que hay tantas dimensiones como variables. Entonces, para revelar la estructura de los datos sería interesanto representar las tendencias principales en forma de "scatterplots" de los sitios. Dado que los datos ecológicos generalmente contienen más de dos variables, no es informativo, impráctico y si muy tedioso graficar cada objeto en una serie de planos definidos por cada uno de los descriptores. Por ejemplo, si los descriptores son 10, el número de planos a dibujar sería igual a (10x9)/2 = 45 ((n-(n-1))/2). 
+
 
