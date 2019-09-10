@@ -8,12 +8,58 @@ output: pdf_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# **Instalando paquetes**
+
+El primer comando de R que seguro será utilizado es install.packages. R solo incluye un set básico de funciones. Debido a la flexibilidad del lenguaje, R permite a los usuarios desarrollar flujos de trabajo específicos los cuales los son organizados en funciones y agrupados como paquetes. Muchas de estas funciones/paquetes estan almacenados en CRAN. Estos paquetes son investigados: chequeados por errores comunes y deben tener una persona que se dedique a mantenerlos. Un paquete puede ser facilmente instalado en R solamente con el nombre. Como ejemplo vamos a instalar el paquete rafalib el cual se va a usar para analizar nuestros datos:
+
+```{r eval=FALSE, include=TRUE}
+install.packages("tidyverse")
+```
+
+Se puede cargar el paquete en la sesion de R usando la función **require** o **library**:
+
+```{r eval=FALSE, include=TRUE}
+library(tidyverse)
+```
+
+Una vez los paquetes hayan sido instalados, éstos solo seran cargados cada vez que se necesiten.
+
+# **Aprendiendo lo básico de R**
+
+La primera tarea es completar el tutorial swirl, con el ánimo de familiarizarse con la sintaxis básica del lenguaje R, dado que en el curso estos temasno serse cubiertos en detalle y se enfocará mas en temas relacionados con estructuras de datos como listas, data frames, vectores numericos, loops-for, como crear funciones y como usar las funciones apply y replicate, entre otros.
+
+El Tutorial swirl enseña a programar en R de manera interactiva directamente sobre la consola de R. Una vez R haya sido instalado, se puede instalar swirl y correrlo de la siguiente manera:
+
+```{r eval=FALSE, include=TRUE}
+install.packages("swirl") 
+library(swirl)
+swirl()
+```
+
+No obstante, otra alternativa puede ser tomar la clase interactiva de la Code School: [Try R](https://www.pluralsight.com/search?q=R). Adicionalmente existen muchos recursos gratis y guías de referencia en internet; por ejemplo:
+
+  * [Quick-R](https://www.statmethods.net): Un recurso online que permite ejercitarce en manejo de datos, estaditica básica y visualización
+  * R reference card [PDF](https://cran.r-project.org/doc/contrib/Short-refcard.pdf) by Tom Short
+  
+Dos cosas claves que se necesitan saber aserca de R es que uno puede obtener información sobre una función utilizando **help** o **?**, de la siguiente manera:
+
+```{r eval=FALSE, include=TRUE}
+?install.packages 
+help("install.packages")
+```
+
+y los caracteres numeral o hash representan comentarios, por lo que el texto que sigue al caracter no será interpretado como codigo R:
+
+```{r eval=FALSE, include=TRUE}
+# Este es un comentario... Comentarios aqui...
+```
+
 
 # **Paths y directorios de trabajo**
 
 Cuando se trabaja en R es útili definir y/o conocer el directorio de trabajo working directory. Este es el directorio o folder en el cual R guardará y buscarán los archivos por defecto. Uno puede saber cual es el directorio de trabajo tipeando:
 
-```{r SetDir, eval=FALSE, include=TRUE}
+```{r eval=FALSE, include=TRUE}
 getwd()
 ```
 
@@ -27,7 +73,7 @@ Al comienzo de cada sesión de trabajo se recomienda definir el directorio o car
 
 En la consola de se puede definir de la siguente manera:
 
-```{r, eval=FALSE, include=TRUE}
+```{r eval=FALSE, include=TRUE}
 setwd('/direccion/de/la/carpeta/de/trabajo/')
 ```
 
