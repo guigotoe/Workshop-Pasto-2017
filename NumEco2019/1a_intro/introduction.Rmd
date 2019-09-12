@@ -284,7 +284,15 @@ E2 <- N2/NO
 div <- data.frame(NO,H,S,N1,N2,E1,E2,J)
 head(div)
 ```
-
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+par(mfrow=c(1,2))
+plot(div$H,type="s",main="Indice de Shannon vs. \n flujo del rio",las=1,
+     xlab="Posicion de los sitios a lo largo del rio",ylab="Indice de Shannon",col="grey")
+text(div$H,row.names(div$H),cex=0.6,col="red")
+plot(div$S,type="s",main="Indice de Simpson vs. \n flujo del rio",las=1,
+     xlab="Posicion de los sitios a lo largo del rio",ylab="Indice de Simpson",col="grey")
+text(div$S,row.names(div$S),cex=0.6,col="red")
+```
 # **Transformación de los datos y normalización**
 
 Hay muchas razones por las cuales los datos pueden ser transformados, sin embargo las razónes principales pueden ser:
@@ -713,6 +721,156 @@ Mientras el análisis de clusters busca por discontinuidades entre el set de dat
 
 ## ** Espacio multidimensional**
 
-Los datos multivariados pueden ser vistos como una colección de sitios posicionados en un espacio donde cada variable define una dimensión. Por lo tanto, uno puede imaginar que hay tantas dimensiones como variables. Entonces, para revelar la estructura de los datos sería interesanto representar las tendencias principales en forma de "scatterplots" de los sitios. Dado que los datos ecológicos generalmente contienen más de dos variables, no es informativo, impráctico y si muy tedioso graficar cada objeto en una serie de planos definidos por cada uno de los descriptores. Por ejemplo, si los descriptores son 10, el número de planos a dibujar sería igual a (10x9)/2 = 45 ((n-(n-1))/2). 
+Los datos multivariados pueden ser vistos como una colección de sitios posicionados en un espacio donde cada variable define una dimensión. Por lo tanto, uno puede imaginar que hay tantas dimensiones como variables. Entonces, para revelar la estructura de los datos sería interesanto representar las tendencias principales en forma de "scatterplots" de los sitios. Dado que los datos ecológicos generalmente contienen más de dos variables, no es informativo, impráctico y si muy tedioso graficar cada objeto en una serie de planos definidos por cada uno de los descriptores. Por ejemplo, si los descriptores son 10, el número de planos a dibujar sería igual a (10x9)/2 = 45 ((n-(n-1))/2). El objetivo de los métodos ordinales es la representación gráfica de los datos sobre un número reducido de ejes ortogonales, construidos de tal manera que su representación represente la variabilidad de los datos.
 
+La mayoría de los métodos ordinales (excepto NMDS) se basan en la extracción de lo vectores propios de una matríz de asociación. Ellos pueden ser clasificados de acuerdo a la distancia calculada entre los sitios y el tipo de variables evaluada. 
 
+  * *Análisis de componentes Principales (PCA)*: El método esta basado principalmente en el cálculo de vectores propios. Trabaja sobre datos crudos y datos cuantitativos. Usa distancias euclidianas entre los sitios. 
+
+  * *Análisis de correspondencias (CA)*: El método trabaja sobre datos que deben ser frecuencias con dimensionalidad homogénea y no negativas. Usa una medida de distancia Chi-cuadrado entre las filas o columnas. Es usualmente usado en ecología para analizar tablas de datos de especies. 
+    
+  * *Análisis de coordenadas Principales (Principal Coordinate - PCoA)*: El método usa matrices de distancia para calcular los componentes ordinales. Esta aproximación es usada en análisis *modo Q*, en ves de tablas sitio - variable. Por lo tanto proporciona gran flexibilidad en la escojencia de las mediads de asociación. 
+  
+  * *Escalamiento nonumerico multidimensional (NMDS)*: A diferencia de los otros tres métodos, este no usa un cálculo de vectores propios. NMDS trata de representar el conjunto de objetos a lo largo de un número predeterminado de ejes preservando la relación de orden entre ellos.
+
+PCoA y NMDS pueden producir resultados ordinales desde cualquier matríz de distancia cuadrada.
+
+```{r echo=TRUE, fig.align="center", message=FALSE, warning=FALSE}
+library(ade4)
+library(factoextra)
+library(vegan)
+library(pheatmap)
+
+# Importando datos (por si acaso)
+# *******************************
+spe <- read.csv('../data/DoubsSpe.csv',row.names=1)
+env <- read.csv('../data/DoubsEnv.csv',row.names=1)
+spa <- read.csv('../data/DoubsSpa.csv',row.names=1)
+# Remover el sitio vacio
+spe <- spe[-8,]
+env <- env[-8,]
+spa <- spa[-8,]
+# PCA
+env.pca <- rda(env,scale=TRUE) # usando datos estandarizados
+env.pca
+```
+
+Para mayor información usar la función **summary ()**
+
+```{r eval=FALSE, include=TRUE}
+summary(env.pca)
+``` 
+
+Vocabulario:
+
+  * **Inercia**: en el lenguaje de **vegan**, éste término se refiere a "variación" en los datos. En PCA la inercia e ya sea la suma de varianzas de las variables (PCA sobre una matríz de covarianza) o en éste caso (PCA sobre una matríz de correlaciones), es la suma de los valores diagonales de la matríz de correlaciones.
+ 
+  * **"Constrained y unconstrainded"**: Tiene que ver con ordinación canónica. El análisis PCA es "unconstrained".
+ 
+  * **"Eigenvalues" (valores propios)**: Éstos son las medidas de la importancia (varianza medida) de los ejes. Ellos puede entenderse como las proporciones de varianza o variabilidad explicadas de toda la inercia de los datos.
+  
+  * **"Scaling"**: No tiene nada que ver con estandarización. En este caso se refiere a la manera en que los resultados son proyectados en el contexto gráfico y de visualización. 2 tipos principales de *"scaling"* son generalmente usados.
+
+    * **PCA scaling 1**: biplot de distancia. (1) **Distancias entre objetos en el biplot son aproximaciones de sus distancias eucidianas.** (2) Los ángulos entre los vectores de los descriptores no tienen significado
+
+    * **PCA scaling 2**: biplot de correlaciones (1) Distancias entre objetos en el biplot NO son aproximaciones de sus distancias eucidianas. (2) **Los ángulos entre los vectores de los descriptores reflejan sus correlaciones**
+  
+ * **"Scores" de las especies**: Coordenadas de las cabezas de las flechas de las variables en el diagrama.
+ 
+ * **"Scores" de los sitios**: Coordenadas de los sitios en el diagrama.
+
+```{r echo=TRUE, fig.align="center",fig.width=10,fig.height=5}
+# Graficar PCA
+par(mfrow=c(1,2))
+biplot(env.pca,scaling=1,main="PCA - scaling 1")
+biplot(env.pca,scaling=2,main="PCA - scaling 2")
+```
+
+## **Combinando clustering y resultados ordinales**
+
+Combinar analisis de clusters y resultados ordinales puede permitir explicar o confirmar diferencias entre grupos de sitios.
+
+```{r echo=TRUE, fig.align="center",fig.width=10,fig.height=7,message=FALSE, warning=FALSE}
+# Combinando clustering y resultados ordinales
+# ******************8**************************
+env.w <- hclust(dist(scale(env)),"ward.D")
+# cortar el dendograma para lograr 4 clusters
+gr <- cutree(env.w,k=4)
+grl <- levels(factor(gr))
+# conceguir los scores (coordenadas) de sitios, scaling 1
+sit.scl <- scores(env.pca,display="wa",scaling=1)
+# Plotear los sitios con los símbolos de los clusters y colores
+p <- plot(env.pca,display="wa",scaling=1,type="n",
+          main="PCA correlacion + clusters")
+abline(v=0,lty="dotted",col="grey")
+abline(h=0,lty="dotted",col="grey")
+for(i in 1:length(grl)){
+  points(sit.scl[gr==i,],pch=(14+i),cex=2,col=i+1)
+}
+text(sit.scl,row.names(env),cex=0.6,pos=3)
+# Añadir el dendograma
+ordicluster(p,env.w,col="dark grey")
+legend("topright",paste0("Group ",c(1:length(grl))),
+       pch=c(14+c(1:length(grl))),
+       col=c(1+c(1:length(grl))),pt.cex=2)
+```
+
+## **Análisis de Correspondencias (CA)**
+
+Éste método es uno de los más usados para el análisis de datos de presencia-ausencia o abundancia de especies. En este método la diferencia entre sitios es medida a través de la distancia Chi-cuadrado ($\chi^2$). La distancia $\chi^2$ no es influenciada por los dobles ceros. Por lo tanto CA es un método adaptado para el análisis de abundancia de especies sin una pre-transformación. Tener siempre en cuenta que los datos usados en un CA deben ser frecuencias dimensionalmente homogeneas y no negativas. Como en PCA, CA puede ser representado en dos scalings: 
+
+  * **CA scaling 1**: Es el más apropiado si uno está interesado en analizar los sitios. Se interpreta como (1) las distancias entre objetos (sitios) en el espacio reducido se aproxima a sus distancias $\chi^2$. Por lo tanto **los sitios que estan juntos a otros es probable que sean relativamente simailares en sus perfiles de frecuencias relativas de especies**. (2) Cualquier objeto (sitio) que se encuentre cerca a un punto que represente alguna especie es probable que contenga una alta contribución de esa especie.
+
+  * **CA scaling 2**: Es el más apropiado si uno está interesado en analizar las especies. Se interpreta como (1) Distancias entre especies se aproxima a sus distancias $\chi^2$. De esta manere **las especies que estan cerca una de la otra es por que es más probable que sus frequencias relativas a lo largo de los sitios evaluados sean similares**. (2) Cualquier especie que este cerca a un punto que represente un sitio es por que es altamente probable que esta especie sea encontrada en este sitio, o que tenga una mas alta abundancia ese sitio que en cualquier otro.
+
+```{r echo=TRUE, fig.align="center",fig.width=10,fig.height=5}
+# Calcular CA
+spe.ca <- cca(spe)
+# Graficar CA
+par(mfrow=c(1,2))
+plot(spe.ca,scaling=1,main="CA abundancia de peces - scaling 1")
+plot(spe.ca,scaling=2,main="CA abundancia de peces - scaling 2")
+```
+
+**Combinando clustering y resultados ordinales:**
+
+```{r echo=TRUE, fig.align="center",fig.width=10,fig.height=7,message=FALSE, warning=FALSE}
+# Combinando clustering y resultados ordinales
+# ******************8**************************
+env.w <- hclust(dist(scale(env)),"ward.D")
+# cortar el dendograma para lograr 4 clusters
+gr <- cutree(env.w,k=4)
+grl <- levels(factor(gr))
+# conceguir los scores (coordenadas) de sitios, scaling 1
+sit.scl <- scores(spe.ca,display="wa",scaling=1)
+spe.scl <- scores(spe.ca,display="species",scaling=1)
+# Plotear los sitios con los símbolos de los clusters y colores
+p <- plot(spe.ca,display="wa",scaling=1,type="n",
+          main="CA correlacion + clusters")
+abline(v=0,lty="dotted",col="grey")
+abline(h=0,lty="dotted",col="grey")
+for(i in 1:length(grl)){
+  points(sit.scl[gr==i,],pch=(14+i),cex=2,col=i+1)
+}
+text(spe.scl,row.names(spe.scl),col="black",pos=2)
+text(sit.scl,row.names(env),cex=0.8,pos=3)
+# Añadir el dendograma
+ordicluster(p,env.w,col="dark grey")
+legend("topright",paste0("Group ",c(1:length(grl))),
+       pch=c(14+c(1:length(grl))),
+       col=c(1+c(1:length(grl))),pt.cex=2)
+```
+
+## **Explicando las distribuciones usando las variables ambientales (*Post Hoc*)**
+
+Aunque hay otras formas de incorporar variables explicatorias directamente sobre el proceso de la análisis ordinal (Ordinación canónica), uno puede estar interesado en incluir variables externas en un método ordinal simple. Para esto **vegan** usa su función **envfit()**. De acuerdo al autor Jari Oksanen, "**envfit** *encuentra los vectores o factores promedio de las variables ambientals. Las projecta de los puntos sobre los vectores tienen los valores máximos de correlación con las variables ambientales correspondientes*"
+
+```{r echo=TRUE, fig.align="center",fig.width=10,fig.height=5}
+# Ajustar medioambiente sobre el  CA
+spe.ca.env <- cca(spe~.,env)
+# Graficar CA enfit
+par(mfrow=c(1,2))
+plot(spe.ca.env,scaling=1,main="CA-env abundancia de peces - scaling 1")
+plot(spe.ca.env,scaling=2,main="CA-env abundancia de peces - scaling 2")
+```
+ 
